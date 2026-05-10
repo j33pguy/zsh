@@ -5,24 +5,50 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
-source /opt/homebrew/share/powerlevel10k/powerlevel10k.zsh-theme
+# Powerlevel10k: explicit env override first, then common macOS/Linux paths.
+if [[ -n "${P10K_THEME:-}" && -r "$P10K_THEME" ]]; then
+  source "$P10K_THEME"
+elif [[ -r /opt/homebrew/share/powerlevel10k/powerlevel10k.zsh-theme ]]; then
+  source /opt/homebrew/share/powerlevel10k/powerlevel10k.zsh-theme
+elif [[ -r /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme ]]; then
+  source /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme
+fi
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-# The following lines have been added by Docker Desktop to enable Docker CLI completions.
-fpath=(/Users/russseaman/.docker/completions $fpath)
+
+# Docker Desktop completions, if present.
+if [[ -d "$HOME/.docker/completions" ]]; then
+  fpath=("$HOME/.docker/completions" $fpath)
+fi
+
 autoload -Uz compinit
 compinit -C
 
+# Optional zsh plugins. Nix/Home Manager can provide explicit script paths via env.
+if [[ -n "${ZSH_AUTOSUGGESTIONS_SCRIPT:-}" && -r "$ZSH_AUTOSUGGESTIONS_SCRIPT" ]]; then
+  source "$ZSH_AUTOSUGGESTIONS_SCRIPT"
+elif [[ -r /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
+  source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+fi
 
-# End of Docker CLI completions
+if [[ -n "${ZSH_SYNTAX_HIGHLIGHTING_SCRIPT:-}" && -r "$ZSH_SYNTAX_HIGHLIGHTING_SCRIPT" ]]; then
+  source "$ZSH_SYNTAX_HIGHLIGHTING_SCRIPT"
+elif [[ -r /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
+  source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+fi
+
 export PATH="$HOME/go/bin:$PATH"
 export PATH="$HOME/.cargo/bin:$PATH"
 export PATH="$HOME/bin:$PATH"
 export PATH="$HOME/.local/bin:$PATH"
-export PATH="/opt/homebrew/bin:$PATH"
 
-#export PATH="$HOME/.turso/env"
+if [[ -d /opt/homebrew/bin ]]; then
+  export PATH="/opt/homebrew/bin:$PATH"
+fi
+
+# Local, untracked machine-specific settings and secrets.
+[[ -f "$HOME/.config/zsh/local.zsh" ]] && source "$HOME/.config/zsh/local.zsh"
 
 # ppm wrapper — cd into project dir and open nvim after create/clone/open
 ppm() {
